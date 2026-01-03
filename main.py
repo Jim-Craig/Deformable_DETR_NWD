@@ -96,6 +96,8 @@ def get_args_parser():
                         help="L1 box coefficient in the matching cost")
     parser.add_argument('--set_cost_giou', default=2, type=float,
                         help="giou box coefficient in the matching cost")
+    parser.add_argument('--set_cost_nwd', default=7, type=float,
+                        help="nwd box coefficient in the matching cost")
 
     # * Loss coefficients
     parser.add_argument('--mask_loss_coef', default=1, type=float)
@@ -104,6 +106,8 @@ def get_args_parser():
     parser.add_argument('--bbox_loss_coef', default=5, type=float)
     parser.add_argument('--giou_loss_coef', default=2, type=float)
     parser.add_argument('--focal_alpha', default=0.25, type=float)
+    parser.add_argument('--bbox_loss_nwd', default=7, type=float)
+
 
     # dataset parameters
     parser.add_argument('--dataset_file', default='coco')

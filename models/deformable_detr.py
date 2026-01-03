@@ -270,12 +270,17 @@ class SetCriterion(nn.Module):
         loss_bbox = F.l1_loss(src_boxes, target_boxes, reduction='none')
 
         losses = {}
-        losses['loss_bbox'] = loss_bbox.sum() / num_boxes
+        # losses['loss_bbox'] = loss_bbox.sum() / num_boxes
 
-        loss_giou = 1 - torch.diag(box_ops.generalized_box_iou(
+        # loss_giou = 1 - torch.diag(box_ops.generalized_box_iou(
+        #     box_ops.box_cxcywh_to_xyxy(src_boxes),
+        #     box_ops.box_cxcywh_to_xyxy(target_boxes)))
+        # losses['loss_giou'] = loss_giou.sum() / num_boxes
+        #     # New Weighted Distance (NWD) loss
+        loss_nwd = 1- torch.diag(box_ops.NWD(
             box_ops.box_cxcywh_to_xyxy(src_boxes),
             box_ops.box_cxcywh_to_xyxy(target_boxes)))
-        losses['loss_giou'] = loss_giou.sum() / num_boxes
+        losses['loss_nwd'] = loss_nwd.sum() / num_boxes
         return losses
 
     def loss_masks(self, outputs, targets, indices, num_boxes):
@@ -463,8 +468,11 @@ def build(args):
     if args.masks:
         model = DETRsegm(model, freeze_detr=(args.frozen_weights is not None))
     matcher = build_matcher(args)
-    weight_dict = {'loss_ce': args.cls_loss_coef, 'loss_bbox': args.bbox_loss_coef}
-    weight_dict['loss_giou'] = args.giou_loss_coef
+    weight_dict = {'loss_ce': 1, 'loss_nwd': args.bbox_loss_nwd}
+    # weight_dict['loss_bbox'] = args.bbox_loss_coef
+    # weight_dict['loss_giou'] = args.giou_loss_coef
+
+
     if args.masks:
         weight_dict["loss_mask"] = args.mask_loss_coef
         weight_dict["loss_dice"] = args.dice_loss_coef

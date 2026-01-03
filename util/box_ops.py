@@ -94,3 +94,37 @@ def masks_to_boxes(masks):
     y_min = y_mask.masked_fill(~(masks.bool()), 1e8).flatten(1).min(-1)[0]
 
     return torch.stack([x_min, y_min, x_max, y_max], 1)
+
+def NWD(bboxes1, bboxes2, eps=1e-6, constant=12.8):
+    # Boxes in [x0, y0, x1, y1]
+    assert bboxes1.size(-1) == 4 or bboxes1.size(0) == 0
+    assert bboxes2.size(-1) == 4 or bboxes2.size(0) == 0
+    assert bboxes1.shape[:-2] == bboxes2.shape[:-2]
+
+    # Valid boxes
+    assert (bboxes1[..., 2:] >= bboxes1[..., :2]).all()
+    assert (bboxes2[..., 2:] >= bboxes2[..., :2]).all()
+
+    # Centers
+    center1 = (bboxes1[..., :, None, :2] + bboxes1[..., :, None, 2:]) / 2
+    center2 = (bboxes2[..., None, :, :2] + bboxes2[..., None, :, 2:]) / 2
+
+    dx = center1[..., 0] - center2[..., 0]
+    dy = center1[..., 1] - center2[..., 1]
+    center_distance = dx * dx + dy * dy
+
+    # Widths & heights
+    w1 = (bboxes1[..., :, None, 2] - bboxes1[..., :, None, 0]).clamp(min=eps)
+    h1 = (bboxes1[..., :, None, 3] - bboxes1[..., :, None, 1]).clamp(min=eps)
+    w2 = (bboxes2[..., None, :, 2] - bboxes2[..., None, :, 0]).clamp(min=eps)
+    h2 = (bboxes2[..., None, :, 3] - bboxes2[..., None, :, 1]).clamp(min=eps)
+
+    wh_distance = ((w1 - w2) ** 2 + (h1 - h2) ** 2) / 4.0
+
+    wasserstein = torch.sqrt(
+        torch.clamp(center_distance + wh_distance, min=eps)
+    )
+
+    nwd_similarity = torch.exp(-wasserstein / constant)
+    return nwd_similarity
+
