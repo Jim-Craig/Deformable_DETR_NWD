@@ -1,4 +1,4 @@
-pycocotools
+pycocotools>=2.0.6
 tqdm
 cython
 scipy

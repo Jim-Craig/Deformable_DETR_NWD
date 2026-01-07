@@ -28,7 +28,8 @@ class HungarianMatcher(nn.Module):
     def __init__(self,
                  cost_class: float = 1,
                  cost_bbox: float = 1,
-                 cost_giou: float = 1):
+                 cost_giou: float = 1, 
+                 cost_nwd: float = 1):
         """Creates the matcher
 
         Params:
@@ -40,6 +41,7 @@ class HungarianMatcher(nn.Module):
         self.cost_class = cost_class
         self.cost_bbox = cost_bbox
         self.cost_giou = cost_giou
+        self.cost_nwd = cost_nwd
         assert cost_class != 0 or cost_bbox != 0 or cost_giou != 0, "all costs cant be 0"
 
     def forward(self, outputs, targets):
@@ -114,4 +116,5 @@ class HungarianMatcher(nn.Module):
 def build_matcher(args):
     return HungarianMatcher(cost_class=args.set_cost_class,
                             cost_bbox=args.set_cost_bbox,
-                            cost_giou=args.set_cost_giou)
+                            cost_giou=args.set_cost_giou, 
+                            cost_nwd=args.set_cost_nwd)

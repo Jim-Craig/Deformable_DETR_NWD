@@ -96,7 +96,7 @@ def get_args_parser():
                         help="L1 box coefficient in the matching cost")
     parser.add_argument('--set_cost_giou', default=2, type=float,
                         help="giou box coefficient in the matching cost")
-    parser.add_argument('--set_cost_nwd', default=7, type=float,
+    parser.add_argument('--set_cost_nwd', default=1, type=float,
                         help="nwd box coefficient in the matching cost")
 
     # * Loss coefficients
@@ -106,7 +106,7 @@ def get_args_parser():
     parser.add_argument('--bbox_loss_coef', default=5, type=float)
     parser.add_argument('--giou_loss_coef', default=2, type=float)
     parser.add_argument('--focal_alpha', default=0.25, type=float)
-    parser.add_argument('--bbox_loss_nwd', default=7, type=float)
+    parser.add_argument('--bbox_loss_nwd', default=1, type=float)
 
 
     # dataset parameters
@@ -257,6 +257,7 @@ def main(args):
                 lr_scheduler.step_size = args.lr_drop
                 lr_scheduler.base_lrs = list(map(lambda group: group['initial_lr'], optimizer.param_groups))
             lr_scheduler.step(lr_scheduler.last_epoch)
+            #TODO UNcomment this!!!!
             args.start_epoch = checkpoint['epoch'] + 1
         # check the resumed model
         if not args.eval:
