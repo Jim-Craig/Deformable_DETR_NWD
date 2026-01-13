@@ -82,21 +82,11 @@ class HungarianMatcher(nn.Module):
             pos_cost_class = alpha * ((1 - out_prob) ** gamma) * (-(out_prob + 1e-8).log())
             cost_class = pos_cost_class[:, tgt_ids] - neg_cost_class[:, tgt_ids]
 
-            # # Compute the L1 cost between boxes
-            # cost_bbox = torch.cdist(out_bbox, tgt_bbox, p=1)
+        #     # Compute the L1 cost between boxes
+        #     cost_bbox = torch.cdist(out_bbox, tgt_bbox, p=1)
 
-            # # Compute the giou cost betwen boxes
-            # cost_giou = -generalized_box_iou(box_cxcywh_to_xyxy(out_bbox),
-            #                                  box_cxcywh_to_xyxy(tgt_bbox))
-
-            # # Final cost matrix
-            # C = self.cost_bbox * cost_bbox + self.cost_class * cost_class + self.cost_giou * cost_giou
-            # C = C.view(bs, num_queries, -1).cpu()
-            # # Compute the L1 cost between boxes
-        # cost_bbox = torch.cdist(out_bbox, tgt_bbox, p=1)
-
-        # # Compute the giou cost betwen boxes
-        # cost_giou = -generalized_box_iou(box_cxcywh_to_xyxy(out_bbox), box_cxcywh_to_xyxy(tgt_bbox))
+            # Compute the giou cost betwen boxes
+            cost_giou = -generalized_box_iou(box_cxcywh_to_xyxy(out_bbox), box_cxcywh_to_xyxy(tgt_bbox))
 
         # Compute the NWD cost between boxes
             cost_NWD = -NWD(
@@ -104,8 +94,10 @@ class HungarianMatcher(nn.Module):
                 box_cxcywh_to_xyxy(tgt_bbox))
             
             # Final cost matrix
-            # C = self.cost_bbox * cost_bbox + self.cost_class * cost_class + self.cost_giou * cost_giou
-            C = self.cost_class * cost_class + self.cost_nwd * cost_NWD
+            # We used this till EPOCH 15, then switched to the one below
+            # C = self.cost_class * cost_class + self.cost_nwd * cost_NWD
+            C = self.cost_class * cost_class + self.cost_giou * cost_giou + self.cost_nwd * cost_NWD
+            
             C = C.view(bs, num_queries, -1).cpu()
 
             sizes = [len(v["boxes"]) for v in targets]

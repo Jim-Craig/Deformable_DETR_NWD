@@ -110,11 +110,14 @@ def get_args_parser():
 
 
     # dataset parameters
+    # Add an argument for the VisDrone dataset flag and paths
+    parser.add_argument('--visdrone_path', default='./data/visdrone', type=str)
     parser.add_argument('--dataset_file', default='coco')
     parser.add_argument('--coco_path', default='./data/coco', type=str)
     parser.add_argument('--coco_panoptic_path', type=str)
     parser.add_argument('--remove_difficult', action='store_true')
-
+    # Expicietly specify number of classes for coco
+    parser.add_argument('--num_classes', default=91, type=int, help='number of classes for the dataset')
     parser.add_argument('--output_dir', default='',
                         help='path where to save, empty for no saving')
     parser.add_argument('--device', default='cuda',
@@ -155,6 +158,7 @@ def main(args):
 
     dataset_train = build_dataset(image_set='train', args=args)
     dataset_val = build_dataset(image_set='val', args=args)
+    dataset_test = build_dataset(image_set='test', args=args)
 
     if args.distributed:
         if args.cache_mode:
@@ -174,6 +178,10 @@ def main(args):
                                    collate_fn=utils.collate_fn, num_workers=args.num_workers,
                                    pin_memory=True)
     data_loader_val = DataLoader(dataset_val, args.batch_size, sampler=sampler_val,
+                                 drop_last=False, collate_fn=utils.collate_fn, num_workers=args.num_workers,
+                                 pin_memory=True)
+    
+    data_loader_test = DataLoader(dataset_test, args.batch_size, sampler=sampler_val,
                                  drop_last=False, collate_fn=utils.collate_fn, num_workers=args.num_workers,
                                  pin_memory=True)
 
@@ -267,7 +275,7 @@ def main(args):
     
     if args.eval:
         test_stats, coco_evaluator = evaluate(model, criterion, postprocessors,
-                                              data_loader_val, base_ds, device, args.output_dir)
+                                              data_loader_test, base_ds, device, args.output_dir)
         if args.output_dir:
             utils.save_on_master(coco_evaluator.coco_eval["bbox"].eval, output_dir / "eval.pth")
         return

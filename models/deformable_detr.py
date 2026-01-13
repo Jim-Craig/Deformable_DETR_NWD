@@ -128,6 +128,7 @@ class DeformableDETR(nn.Module):
         """
         if not isinstance(samples, NestedTensor):
             samples = nested_tensor_from_tensor_list(samples)
+        # Features from the backbones and the positional embeddings
         features, pos = self.backbone(samples)
 
         srcs = []
@@ -267,15 +268,16 @@ class SetCriterion(nn.Module):
         src_boxes = outputs['pred_boxes'][idx]
         target_boxes = torch.cat([t['boxes'][i] for t, (_, i) in zip(targets, indices)], dim=0)
 
-        loss_bbox = F.l1_loss(src_boxes, target_boxes, reduction='none')
+        # loss_bbox = F.l1_loss(src_boxes, target_boxes, reduction='none')
 
         losses = {}
         # losses['loss_bbox'] = loss_bbox.sum() / num_boxes
 
-        # loss_giou = 1 - torch.diag(box_ops.generalized_box_iou(
-        #     box_ops.box_cxcywh_to_xyxy(src_boxes),
-        #     box_ops.box_cxcywh_to_xyxy(target_boxes)))
-        # losses['loss_giou'] = loss_giou.sum() / num_boxes
+        loss_giou = 1 - torch.diag(box_ops.generalized_box_iou(
+            box_ops.box_cxcywh_to_xyxy(src_boxes),
+            box_ops.box_cxcywh_to_xyxy(target_boxes)))
+        losses['loss_giou'] = loss_giou.sum() / num_boxes
+
         #     # New Weighted Distance (NWD) loss
         loss_nwd = 1- torch.diag(box_ops.NWD(
             box_ops.box_cxcywh_to_xyxy(src_boxes),
@@ -447,7 +449,7 @@ class MLP(nn.Module):
 
 
 def build(args):
-    num_classes = 20 if args.dataset_file != 'coco' else 91
+    num_classes = args.num_classes
     if args.dataset_file == "coco_panoptic":
         num_classes = 250
     device = torch.device(args.device)
@@ -468,9 +470,11 @@ def build(args):
     if args.masks:
         model = DETRsegm(model, freeze_detr=(args.frozen_weights is not None))
     matcher = build_matcher(args)
-    weight_dict = {'loss_ce': 1, 'loss_nwd': args.bbox_loss_nwd}
+    # weight_dict = {'loss_ce': 1, 'loss_nwd': args.bbox_loss_nwd}
+    # Right now, Deformable DETR comes up with this hard-coded weight for classification loss, Explore the possibility to change it to the one below.
+    weight_dict = {'loss_ce': args.cls_loss_coef, 'loss_nwd': args.bbox_loss_nwd}
     # weight_dict['loss_bbox'] = args.bbox_loss_coef
-    # weight_dict['loss_giou'] = args.giou_loss_coef
+    weight_dict['loss_giou'] = args.giou_loss_coef
 
 
     if args.masks:

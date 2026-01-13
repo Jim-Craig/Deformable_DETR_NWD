@@ -11,7 +11,7 @@ import torch.utils.data
 from .torchvision_datasets import CocoDetection
 
 from .coco import build as build_coco
-
+from .visdrone import build as build_visdrone
 
 def get_coco_api_from_dataset(dataset):
     for _ in range(10):
@@ -30,4 +30,6 @@ def build_dataset(image_set, args):
         # to avoid making panopticapi required for coco
         from .coco_panoptic import build as build_coco_panoptic
         return build_coco_panoptic(image_set, args)
+    if args.dataset_file == 'visdrone':
+        return build_visdrone(image_set, args)
     raise ValueError(f'dataset {args.dataset_file} not supported')
